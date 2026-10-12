@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thresholds</title>
+  <meta name="description" content="A dark room with a door. Behind it, endless procedurally generated worlds full of more doors." />
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.min.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="view"></canvas>
+
+  <div id="hud">
+    <div id="crosshair"></div>
+    <div id="prompt"></div>
+    <div id="title"><div id="title-main"></div><div id="title-sub"></div></div>
+    <div id="where"></div>
+    <div id="hint">
+      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span>
+      <span><kbd>Shift</kbd> run</span>
+      <span><kbd>Space</kbd> jump · again to double jump · hold to glide</span>
+      <span><kbd>E</kbd> open door</span>
+      <span><kbd>R</kbd> back to the room</span>
+      <span><kbd>M</kbd> mute</span>
+    </div>
+  </div>
+
+  <div id="fade"><div id="fade-label"></div></div>
+
+  <div id="start" class="screen on">
+    <div class="card">
+      <h1>Thresholds</h1>
+      <p class="lede">There is a door in the dark.<br />Behind it, a world. In that world, more doors.</p>
+      <button id="begin" disabled>Loading…</button>
+      <ul class="keys">
+        <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk &nbsp;·&nbsp; <kbd>Mouse</kbd> look &nbsp;·&nbsp; <kbd>Shift</kbd> run</li>
+        <li><kbd>Space</kbd> jump, again to double jump, hold while falling to glide on the wind</li>
+        <li><kbd>E</kbd> open a door and step through &nbsp;·&nbsp; <kbd>R</kbd> return to the room &nbsp;·&nbsp; <kbd>M</kbd> mute</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="pause" class="screen">
+    <div class="card small"><h2>Paused</h2><p>Click to keep wandering.</p></div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

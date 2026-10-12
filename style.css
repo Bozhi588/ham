@@ -1,0 +1,107 @@
+:root {
+  --ink: #f4efe6;
+  --dim: rgba(244, 239, 230, 0.62);
+  --accent: #ffcf8a;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: var(--ink);
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+#view { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#hud { position: fixed; inset: 0; pointer-events: none; }
+
+#crosshair {
+  position: absolute; left: 50%; top: 50%;
+  width: 4px; height: 4px; margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+#prompt {
+  position: absolute; left: 50%; top: 58%;
+  transform: translate(-50%, 6px);
+  padding: 8px 18px;
+  font-size: 17px; letter-spacing: 0.04em;
+  background: rgba(10, 8, 6, 0.55);
+  border: 1px solid rgba(255, 220, 160, 0.35);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+#prompt.on { opacity: 1; transform: translate(-50%, 0); }
+
+#title {
+  position: absolute; left: 0; right: 0; top: 17%;
+  text-align: center; opacity: 0;
+  transition: opacity 1.4s ease;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+}
+#title.on { opacity: 1; }
+#title-main { font-size: clamp(30px, 5.2vw, 64px); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 400; }
+#title-sub { margin-top: 10px; font-size: clamp(14px, 1.7vw, 20px); letter-spacing: 0.3em; text-transform: uppercase; color: var(--dim); }
+
+#where {
+  position: absolute; right: 18px; bottom: 14px;
+  font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+#hint {
+  position: absolute; left: 18px; bottom: 14px;
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 12px; color: rgba(255, 255, 255, 0.5);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.7);
+  transition: opacity 1.2s ease;
+}
+#hint.dim { opacity: 0.25; }
+kbd {
+  display: inline-block; min-width: 1.5em; padding: 1px 5px; margin-right: 3px;
+  text-align: center; font: inherit; font-size: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 4px;
+  background: rgba(0, 0, 0, 0.25); color: inherit;
+}
+
+#fade {
+  position: fixed; inset: 0; background: #000; opacity: 1;
+  pointer-events: none; display: flex; align-items: center; justify-content: center;
+}
+#fade-label {
+  font-size: 13px; letter-spacing: 0.35em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55); opacity: 0; transition: opacity 0.3s ease;
+}
+#fade-label.on { opacity: 1; }
+
+.screen {
+  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, rgba(8, 6, 4, 0.55), rgba(0, 0, 0, 0.88));
+  backdrop-filter: blur(3px); cursor: pointer; z-index: 5;
+}
+.screen.on { display: flex; }
+.card { max-width: 640px; padding: 40px 44px; text-align: center; }
+.card.small { padding: 24px 40px; }
+.card h1 { margin: 0 0 14px; font-size: clamp(38px, 7vw, 76px); font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase; }
+.card h2 { margin: 0 0 8px; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; }
+.lede { margin: 0 0 28px; font-size: 19px; line-height: 1.6; color: var(--dim); font-style: italic; }
+#begin {
+  font: inherit; font-size: 17px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--ink); background: transparent;
+  border: 1px solid rgba(255, 220, 160, 0.6); border-radius: 999px;
+  padding: 12px 34px; cursor: pointer; transition: background 0.2s ease, color 0.2s ease;
+}
+#begin:hover:not(:disabled) { background: rgba(255, 207, 138, 0.16); color: #fff; }
+#begin:disabled { opacity: 0.5; cursor: progress; }
+.keys { list-style: none; margin: 30px 0 0; padding: 0; font-size: 13.5px; line-height: 2.1; color: var(--dim); }
+.keys kbd { color: var(--ink); }
+
+@media (max-width: 720px) {
+  #hint { display: none; }
+  .card { padding: 24px; }
+}

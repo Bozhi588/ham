@@ -1,0 +1,11 @@
+{
+  "name": "thresholds",
+  "version": "1.0.0",
+  "description": "A dark room with a door. Behind it: procedurally generated worlds full of more doors.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node serve.mjs"
+  },
+  "license": "MIT"
+}
