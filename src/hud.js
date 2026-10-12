@@ -14,6 +14,8 @@ export class Hud {
     this.pause = $('pause');
     this.hint = $('hint');
     this.where = $('where');
+    this.toastEl = $('toast');
+    this._toastTimer = 0;
     this._promptText = null;
     this._titleTimer = 0;
   }
@@ -27,6 +29,13 @@ export class Hud {
     } else {
       this.prompt.classList.remove('on');
     }
+  }
+
+  toast(text, ms = 2200) {
+    this.toastEl.textContent = text;
+    this.toastEl.classList.add('on');
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.toastEl.classList.remove('on'), ms);
   }
 
   setWhere(text) {

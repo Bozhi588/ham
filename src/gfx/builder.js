@@ -53,7 +53,6 @@ function icosphere(detail) {
 }
 
 const _shade = { r: 1, g: 1, b: 1 };
-const _m = new THREE.Matrix4();
 const _v = new THREE.Vector3();
 
 /**

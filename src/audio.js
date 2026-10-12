@@ -40,7 +40,7 @@ export class AudioEngine {
       this._buildWind();
       this._buildRoom();
       this.setMode(this.mode, this.windLevel);
-    } catch (e) {
+    } catch {
       this.ctx = null;
     }
   }

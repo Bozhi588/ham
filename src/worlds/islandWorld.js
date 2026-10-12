@@ -9,11 +9,10 @@ import { puffTree, rock, flowerHead, crystalCluster, cloudBank } from '../gfx/pr
 import { Door } from '../door.js';
 import { circle, resolveColliders, topAt } from '../colliders.js';
 import { BIOME_DATA, pickDestination } from './biomeData.js';
+import { QUALITY } from '../quality.js';
 
 const CELL = 38; // lattice spacing between island centres
 const NS = 48; // angular samples around each island
-const VIEW = 7; // cell radius kept loaded
-const HIGH_RING = 3; // cells within this ring get full detail
 const SEA_Y = -75; // altitude of the cloud sea
 
 const col = (h) => new THREE.Color(h);
@@ -58,7 +57,11 @@ export class IslandWorld extends World {
     this.biomeId = 'islands';
     this.windLevel = 0.45;
     this.surfaceType = 'grass';
-    this.fog = CONFIG.fog;
+    this.quality = opts.quality ?? QUALITY[2];
+    this.view = this.quality.islandView; // cell radius kept loaded
+    this.highRing = this.quality.highRing; // cells within this ring get full detail
+    const far = Math.min(CONFIG.fog.far, this.view * CELL * 0.95);
+    this.fog = { color: CONFIG.fog.color, near: Math.min(CONFIG.fog.near, far * 0.35), far };
     this.killY = SEA_Y - 40;
     this.backLook = opts.backLook ?? { glow: 0xffc27a, horizon: 0x3a2c20, zenith: 0x0c0907 };
     this.spawnOverride = opts.spawn ?? null;
@@ -431,20 +434,19 @@ export class IslandWorld extends World {
 
   _addIsland(rec, detail, b, cell, blades) {
     const rnd = mulberry32(hashInts(this.seed, rec.i, rec.j, rec.k * 131 + 777));
-    const stepS = detail ? 1 : 2;
+    const stone = rec.kind === 'stone';
+    const stepS = detail && !stone ? 1 : 2;
     const NSd = NS / stepS;
-    const NR = detail ? clamp(Math.round(rec.R * 0.9), 5, 13) : 3;
-    const ND = detail ? 9 : 4;
+    const NR = stone ? 3 : detail ? clamp(Math.round(rec.R * 0.75), 5, 10) : 3;
+    const ND = stone ? 5 : detail ? 8 : 4;
     const tmp = new THREE.Color();
     const e = 0.5;
 
     // ---- top surface (smooth shaded) ------------------------------------------
     const vert = (x, z, d) => {
       const y = this.topRaw(rec, x, z);
-      let nx = this.topRaw(rec, x - e, z) - this.topRaw(rec, x + e, z);
-      let nz = this.topRaw(rec, x, z - e) - this.topRaw(rec, x, z + e);
-      nx /= 2 * e;
-      nz /= 2 * e;
+      const nx = (y - this.topRaw(rec, x + e, z)) / e;
+      const nz = (y - this.topRaw(rec, x, z + e)) / e;
       const nl = Math.hypot(nx, 1, nz);
       this._topColor(x, z, d, nx / nl, 1 / nl, nz / nl, tmp);
       return { p: [x, y, z], c: { r: tmp.r, g: tmp.g, b: tmp.b } };
@@ -537,7 +539,7 @@ export class IslandWorld extends World {
       const a = rnd() * TAU;
       const dist = rec.R * lerp(0.4, 2.2, rnd());
       const y = lerp(rec.y - rec.D - 28, SEA_Y + 14, rnd());
-      cloudBank(b, rnd, rec.cx + Math.cos(a) * dist, y, rec.cz + Math.sin(a) * dist, lerp(7, 14, rnd()), P.white, detail ? 2 : 1);
+      cloudBank(b, rnd, rec.cx + Math.cos(a) * dist, y, rec.cz + Math.sin(a) * dist, lerp(7, 14, rnd()), P.white, 1);
     }
   }
 
@@ -613,7 +615,7 @@ export class IslandWorld extends World {
         }
       }
       // flowers
-      const nFlowers = Math.floor(rec.R * rec.R * 0.22);
+      const nFlowers = Math.floor(rec.R * rec.R * 0.15);
       for (let n = 0; n < nFlowers; n++) {
         const pt = spot(0.92, 0.3);
         if (!pt) continue;
@@ -645,8 +647,8 @@ export class IslandWorld extends World {
     }
 
     // grass
-    const density = main ? 5.5 : 4;
-    const count = Math.floor(Math.PI * rec.R * rec.R * 0.85 * density);
+    const density = main ? 4.6 : 3.5;
+    const count = Math.floor(Math.PI * rec.R * rec.R * 0.85 * density * this.quality.grass);
     const tint = new THREE.Color();
     const e = 0.5;
     for (let n = 0; n < count; n++) {
@@ -668,8 +670,8 @@ export class IslandWorld extends World {
       }
       if (blocked) continue;
       const y = this.topRaw(rec, x, z);
-      let nx = (this.topRaw(rec, x - e, z) - this.topRaw(rec, x + e, z)) / (2 * e);
-      let nz = (this.topRaw(rec, x, z - e) - this.topRaw(rec, x, z + e)) / (2 * e);
+      const nx = (y - this.topRaw(rec, x + e, z)) / e;
+      const nz = (y - this.topRaw(rec, x, z + e)) / e;
       const nl = Math.hypot(nx, 1, nz);
       this._topColor(x, z, d, nx / nl, 1 / nl, nz / nl, tint);
       blades.off.push(x, y - 0.02, z);
@@ -691,13 +693,14 @@ export class IslandWorld extends World {
     this.pci = pci;
     this.pcj = pcj;
     const tasks = [];
+    const VIEW = this.view;
     for (let dj = -VIEW; dj <= VIEW; dj++) {
       for (let di = -VIEW; di <= VIEW; di++) {
         const ring = Math.max(Math.abs(di), Math.abs(dj));
         const i = pci + di;
         const j = pcj + dj;
         const cell = this.cells.get(i + ',' + j);
-        const want = ring <= HIGH_RING ? 1 : 0;
+        const want = ring <= this.highRing ? 1 : 0;
         if (!cell || cell.detail < want) tasks.push({ i, j, detail: want, key: Math.hypot(di, dj) });
       }
     }

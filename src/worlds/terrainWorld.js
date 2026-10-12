@@ -17,6 +17,7 @@ import { windTree, pineTree, rock, monolith, cactus, deadTree, flowerHead } from
 import { Door } from '../door.js';
 import { circle, resolveColliders, topAt } from '../colliders.js';
 import { BIOME_DATA, pickDestination } from './biomeData.js';
+import { QUALITY } from '../quality.js';
 
 export const CHUNK = 64; // metres per chunk side
 const SEG = 48; // quads per chunk side
@@ -27,8 +28,6 @@ const N1 = SEG + 1;
 const REGION = 96; // door cell size
 const FLAT_IN = 3.6; // terrain is flattened around doors
 const FLAT_OUT = 15;
-const VIEW = 3; // chunk radius that is kept loaded
-const GRASS_RING = 2; // chunk radius that gets grass
 
 let sharedIndex = null;
 function getIndex() {
@@ -73,7 +72,12 @@ export class TerrainWorld extends World {
     this.biomeId = cfg.id;
     this.windLevel = cfg.windLevel;
     this.surfaceType = cfg.surface;
-    this.fog = cfg.fog;
+    this.quality = opts.quality ?? QUALITY[2];
+    this.view = this.quality.terrainView; // chunk radius kept loaded
+    this.grassRing = this.quality.grassRing; // chunk radius that gets grass
+    // never let the fog end beyond the loaded terrain
+    const far = Math.min(cfg.fog.far, this.view * CHUNK * 0.97);
+    this.fog = { color: cfg.fog.color, near: Math.min(cfg.fog.near, far * 0.4), far };
     this.exposure = cfg.exposure ?? 1;
     this.backLook = opts.backLook ?? { glow: 0xffc27a, horizon: 0x3a2c20, zenith: 0x0c0907 };
     this.spawnOverride = opts.spawn ?? null;
@@ -97,7 +101,6 @@ export class TerrainWorld extends World {
     this.grassMat = cfg.grass
       ? makeGrassMaterial(this.wind, { baseMul: cfg.grass.baseMul, tipMul: cfg.grass.tipMul, fadeNear: 55, fadeFar: 105 })
       : null;
-    for (const m of [this.terrainMat, this.solidMat, this.propMat, this.grassMat]) if (m) m.userData.shared = true;
 
     this.props = cfg.props ?? {};
     this.treeCols = this.props.trees
@@ -559,7 +562,7 @@ export class TerrainWorld extends World {
     const g = this.cfg.grass;
     if (!g || g.density <= 0 || ch.grass) return;
     const rnd = mulberry32(hashInts(this.seed, ch.cx, ch.cz, 991));
-    const spacing = 1 / Math.sqrt(g.density);
+    const spacing = 1 / Math.sqrt(g.density * this.quality.grass);
     const per = Math.ceil(CHUNK / spacing);
     const max = per * per;
     const off = new Float32Array(max * 3);
@@ -644,6 +647,7 @@ export class TerrainWorld extends World {
     this.pcx = pcx;
     this.pcz = pcz;
     const tasks = [];
+    const VIEW = this.view;
     for (let dz = -VIEW; dz <= VIEW; dz++) {
       for (let dx = -VIEW; dx <= VIEW; dx++) {
         const cx = pcx + dx;
@@ -652,7 +656,7 @@ export class TerrainWorld extends World {
         const dist = Math.hypot(dx, dz);
         const ch = this.chunks.get(this._key(cx, cz));
         if (!ch) tasks.push({ type: 'chunk', cx, cz, key: dist });
-        if (ring <= GRASS_RING && this.cfg.grass && (!ch || !ch.grass)) tasks.push({ type: 'grass', cx, cz, key: dist + 0.6 });
+        if (ring <= this.grassRing && this.cfg.grass && (!ch || !ch.grass)) tasks.push({ type: 'grass', cx, cz, key: dist + 0.6 });
       }
     }
     tasks.sort((a, b) => a.key - b.key);
@@ -661,7 +665,7 @@ export class TerrainWorld extends World {
     for (const ch of [...this.chunks.values()]) {
       const ring = Math.max(Math.abs(ch.cx - pcx), Math.abs(ch.cz - pcz));
       if (ring > VIEW + 1) this.disposeChunk(ch);
-      else if (ring > GRASS_RING + 1) this.disposeGrass(ch);
+      else if (ring > this.grassRing + 1) this.disposeGrass(ch);
     }
   }
 
